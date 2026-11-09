@@ -1,7 +1,7 @@
 #include "Sensor_h"
 
 SensorTension sTension(A0);
-SensorCorriente sTension(A1);
+SensorCorriente sCorriente(A1);
 float energiaWh = 0;
 
   void setup() {
