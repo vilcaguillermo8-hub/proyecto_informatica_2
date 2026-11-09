@@ -78,14 +78,14 @@ float Aerogenerador::calcularPotencia()
 	corrienteSalida = potenciaGenerada / tensionSalida;
 	return potenciaGenerada;
 }
-
+/*
 void Aerogenerador::encendido() { 
 	estado = 1; 
 }
 void Aerogenerador::apagado() { 
 	estado = 0; 
 }
-
+*/
 void Aerogenerador::mostrar()
 {
 	if (estado == 1) {
