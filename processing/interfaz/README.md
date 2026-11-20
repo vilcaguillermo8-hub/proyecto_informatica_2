@@ -45,4 +45,4 @@ Serial.print(";P:"); Serial.println(tension * corriente, 1);
 Con **REGISTRO CSV** se guarda un archivo en `interfaz/datos/` con una fila cada 0,5 s.
 
 ## Pestañas
-`interfaz` (setup/draw, eventos) · `Medicion` (Senal) · `Simulador` · `Serie` · `Grafico` · `Controles` (Boton, Deslizador) · `Panel` (Panel, TarjetaSenal, Gauge, BarraProgreso) · `Inicio` (pantalla de bienvenida) · `Turbina` · `Ventanas` (detalle, diagnóstico, eventos) · `Registro`
+`interfaz` (setup/draw, eventos) · `Medicion` (Señal) · `Simulador` · `Serie` · `Grafico` · `Controles` (Boton, Deslizador) · `Panel` (Panel, TarjetaSenal, Gauge, BarraProgreso) · `Inicio` (pantalla de bienvenida) · `Turbina` · `Ventanas` (detalle, diagnóstico, eventos) · `Registro`
