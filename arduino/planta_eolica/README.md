@@ -1,118 +1,147 @@
-# Simulación en Wokwi - Planta Eólica Inteligente
+# Planta Generadora Eólica Inteligente — Parte Arduino
 
-Simulación del programa Arduino de la planta eólica: mide **viento, RPM del rotor, tensión, corriente, potencia, energía, temperatura y humedad**, los muestra en una pantalla OLED y los envía por Serial a la interfaz de Processing.
+Prototipo de micro planta eólica: un motor paso a paso usado como generador alimenta una carga resistiva. Un Arduino UNO mide la tensión generada, el viento, la temperatura y la humedad, calcula corriente y potencia, decide el estado de la planta (con una máquina de estados) y envía los datos por USB a la interfaz de Processing.
 
-## Enlace al proyecto
+> **Alcance del prototipo:** se muestra el comportamiento de la planta hacia una carga (no la planta completa). El viento se simula con un potenciómetro; la corriente se calcula, no se mide.
 
-**▶ [Abrir la simulación en Wokwi]https://wokwi.com/projects/481244204799568897)**
+**Integrantes:** Salinas Francisco · Spinoza Lucas · Vilca Javier — UTN FRM, Informática II.
 
-## Archivos
+---
 
-| Archivo | Descripción |
-|---|---|
-| `sketch.ino` | Programa principal de Arduino |
-| `diagram.json` | Circuito (placa, sensores simulados, pantalla) |
-| `libraries.txt` | Librerías que Wokwi instala automáticamente |
+## 1. Qué hace
 
-## Componentes
+Una vez por segundo el Arduino:
+
+1. Lee la tensión del generador (A0) y el viento simulado (A1).
+2. Lee temperatura y humedad del DHT22 (cada 2 s como mínimo; entre lecturas conserva el último valor válido).
+3. Calcula corriente y potencia sobre la carga.
+4. Actualiza la máquina de estados y los LEDs.
+5. Envía una trama de texto por serie a la PC.
+
+Además atiende órdenes que llegan desde Processing (cambiar umbral, reiniciar).
+
+---
+
+## 2. Componentes
 
 | Componente | Función | Pin |
 |---|---|---|
-| Arduino Uno | Placa principal | - |
-| Potenciómetro `potV` | Simula el módulo de tensión FZ0430 (0-25 V) | A0 |
-| Potenciómetro `potI` | Simula el sensor de corriente ACS712-5A | A1 |
-| Potenciómetro `potW` | Fija la frecuencia de pulsos del anemómetro (viento) | A2 |
-| Potenciómetro `potR` | Fija la frecuencia de pulsos del rotor (RPM) | A3 |
-| DHT22 | Temperatura y humedad | D7 |
-| LED rojo + resistencia 220 Ω | Indica si hay viento suficiente | D4 |
-| Pantalla OLED SSD1306 (I2C) | Muestra todos los valores | A4 (SDA), A5 (SCL) |
+| Arduino UNO | Controlador | — |
+| Motor paso a paso (como generador) | Genera tensión al girar el eje | 1 bobina → puente |
+| 4 diodos (1N5819 o 1N4148) | Puente rectificador | — |
+| Capacitor 100 µF | Alisa la tensión rectificada | — |
+| Resistencia 100 Ω / ½ W | Carga | — |
+| 2 resistencias 10 kΩ | Divisor de tensión (÷2) | A0 |
+| Potenciómetro | Simula el viento (0–28 m/s) | A1 |
+| DHT22 | Temperatura y humedad | D2 |
+| 3 LEDs + 3 × 220 Ω | Verde, amarillo, rojo | D8 / D9 / D10 |
 
-### Interrupciones y pulsos simulados
+## 3. Armado del circuito (resumen)
 
-En el prototipo real, un **sensor Hall** (anemómetro) y un **fotointerruptor** (rotor) generan pulsos que cuentan las interrupciones. Wokwi no tiene esos sensores, así que el programa los imita:
+1. **Motor:** usar una sola bobina. Con un óhmetro, encontrar los dos extremos de una bobina (en motores de 5 o 6 cables, el cable común queda sin conectar).
+2. **Rectificación:** los dos extremos de la bobina van a un puente de 4 diodos.
+3. **Salida del puente:** capacitor de 100 µF en paralelo con la carga de 100 Ω.
+4. **Medición:** divisor 10 kΩ / 10 kΩ en paralelo con la carga; el punto medio va a **A0**. Mide hasta 10 V.
+5. **Viento:** potenciómetro con extremos a 5 V y GND, cursor a **A1**.
+6. **DHT22:** alimentación 5 V, GND y dato a **D2** (el módulo de 3 pines ya trae la resistencia pull-up).
+7. **LEDs:** cada uno con su resistencia de 220 Ω a GND.
+8. **GND común** para todo.
 
-| Sensor real | Pin de entrada | Pin que genera los pulsos (simulación) |
-|---|---|---|
-| Fotointerruptor (rotor) | D2 | D6 |
-| Sensor Hall (anemómetro) | D3 | D5 |
+⚠️ **Precaución a tener en cuenta:** la carga de 100 Ω / ½ W disipa 0,5 W a 7,07 V. A los 8 V de protección serían 0,64 W, por encima de su capacidad. Se debe girar el eje con cuidado, o usar una resistencia de 1 W.
 
-Dos cables unen **D5 → D3** y **D6 → D2**. La frecuencia de cada tren de pulsos la fijan los potenciómetros `potW` y `potR`.
+---
 
-## Cómo usarlo
+## 4. Estados de la planta
 
-1. Abrir el enlace de arriba (o crear un proyecto **Arduino Uno** en [wokwi.com](https://wokwi.com) y pegar los tres archivos).
-2. Presionar **Play**.
-3. Mover los potenciómetros:
-   - `potW`: velocidad del viento (0-20 m/s).
-   - `potR`: RPM del rotor (0-900 rpm).
-   - `potV` / `potI`: tensión (0-25 V) y corriente generadas.
-4. Hacer clic sobre el **DHT22** para cambiar temperatura y humedad.
-5. Abrir el **Monitor Serie** para ver los datos.
+| Estado | Valor | LED | Significado |
+|---|---|---|---|
+| ESPERA | 0 | ninguno | Tensión por debajo del mínimo |
+| GENERANDO | 1 | verde (D8) | Generación normal |
+| DERIVACION | 2 | amarillo (D9) | Tensión sobre el umbral de derivación |
+| PROTECCION | 3 | rojo (D10) | Tensión máxima o temperatura crítica superadas |
 
-El LED se enciende cuando el viento llega a **2,5 m/s** o más.
+Los umbrales están en `Config.h` y son **provisorios** (se ajustan en las pruebas): `TENSION_MINIMA_V = 0.5`, `TENSION_DERIVACION_V = 4.0`, `TENSION_MAXIMA_V = 8.0`, `TEMPERATURA_CRITICA_C = 50.0`, `HISTERESIS_V = 0.2`. La histéresis evita que el estado parpadee cuando la tensión oscila cerca de un umbral.
 
-## Qué hace el programa
+---
 
-Una vez por segundo:
+## 5. Comunicación serie (9600 baudios)
 
-1. Copia y reinicia los contadores de pulsos (las interrupciones solo cuentan).
-2. Calcula las **RPM** del rotor y la **velocidad del viento**.
-3. Calcula la **potencia del viento** con el límite de Betz.
-4. Lee **tensión** y **corriente**, y calcula `P = V × I` y la **energía** acumulada (Wh).
-5. Lee **temperatura** y **humedad** del DHT22.
-6. Envía los datos por Serial y actualiza la OLED.
-
-### Fórmulas
-
-| Magnitud | Fórmula |
-|---|---|
-| RPM | `vueltas × 60000 / 1000` |
-| Viento (m/s) | `rpm_anemómetro × 0,16 × π / 60` |
-| Potencia del viento (mW) | `0,5 × 0,59 × 1,225 × π × 0,25² × v³ × 1000` |
-| Tensión (V) | `ADC × Vref / 1023 × 5` |
-| Corriente (A) | `(Vout − 2,5) / 0,185` |
-| Potencia eléctrica (W) | `V × I` |
-| Energía (Wh) | `Σ P × Δt / 3600` |
-
-## Salida por Serial
-
-Una línea por segundo, a **9600 baudios**, con el formato que lee la interfaz de Processing:
+### Arduino → PC (una línea por segundo)
 
 ```
-V:12.5;I:4.10;P:51.3;E:1.20;W:8.0;R:164;T:25.0;H:50
+HUM:48;VTO:8.5;POT:250;TMP:24;V:5.0;I:50;EST:1
 ```
 
 | Clave | Variable | Unidad |
 |---|---|---|
-| V | Tensión | V |
-| I | Corriente | A |
-| P | Potencia eléctrica | W |
-| E | Energía acumulada | Wh |
-| W | Velocidad del viento | m/s |
-| R | RPM del rotor | rpm |
-| T | Temperatura | °C |
-| H | Humedad | % |
+| HUM | Humedad | % |
+| VTO | Velocidad del viento | m/s |
+| POT | Potencia sobre la carga | mW |
+| TMP | Temperatura | °C |
+| V | Tensión en la carga | V |
+| I | Corriente en la carga | mA |
+| EST | Estado de la planta | 0 a 3 |
 
-## Pasar al hardware real
+### PC → Arduino (órdenes)
 
-En `sketch.ino` cambiar:
+| Orden | Efecto |
+|---|---|
+| `CMD:UMBRAL=<V>` | Cambia el umbral de derivación (en voltios) |
+| `CMD:RESET` | Devuelve la planta a ESPERA y restaura el umbral de derivación |
 
-```cpp
-#define SIMULACION 0
+> Solo puede haber un programa usando el puerto COM a la vez: cerrar el Monitor Serie del IDE antes de abrir Processing.
+
+---
+
+## 6. Fórmulas
+
+| Magnitud | Fórmula |
+|---|---|
+| Tensión (V) | `ADC × 5,0 / 1023 × 2` (el 2 es el divisor) |
+| Corriente (mA) | `V / R × 1000`, con R = 100 Ω |
+| Potencia (mW) | `V² / R × 1000` |
+| Viento (m/s) | `ADC / 1023 × 28` (potenciómetro) |
+| Potencia teórica del viento (mW) | `0,5 × 0,59 × 1,225 × π × 0,25² × v³ × 1000` (límite de Betz, radio de rotor 0,25 m) |
+
+---
+
+## 7. Estructura del código
+
+```
+arduino/planta_eolica/
+├── planta_eolica.ino      Programa principal: solo setup() y loop()
+├── Config.h               Pines, constantes y umbrales
+├── Sensores.h / .cpp      SensorTension, SensorViento, SensorAmbiente (DHT22)
+├── Aerogenerador.h / .cpp Cálculo de corriente, potencia y potencia teórica
+├── MaquinaEstados.h / .cpp Estados, umbrales con histéresis y LEDs
+└── ComunicacionSerie.h / .cpp Envío de la trama y lectura de órdenes
 ```
 
-Con eso:
-- Se usa la referencia analógica interna de **1,1 V** (como en el TFG).
-- Se dejan de generar pulsos simulados: hay que conectar el Hall a **D3** y el fotointerruptor a **D2**.
-- Los potenciómetros se reemplazan por el **FZ0430** (A0) y el **ACS712** (A1).
+Cada módulo es una clase con su declaración en el `.h` (el "contrato") y su lógica en el `.cpp`. El `.ino` solo une las piezas.
 
-## Librerías
+---
 
-- Adafruit GFX Library
-- Adafruit SSD1306
-- DHT sensor library
-- Adafruit Unified Sensor
+## 8. Cómo compilar y cargar
 
-## Referencia
+1. Abrir `planta_eolica.ino` con el IDE de Arduino (los demás archivos se cargan solos si están en la misma carpeta).
+2. Instalar desde el Gestor de Bibliotecas: **DHT sensor library** y **Adafruit Unified Sensor**.
+3. Seleccionar placa **Arduino Uno** y el puerto correcto.
+4. Cargar el sketch.
+5. Cerrar el Monitor Serie y abrir la interfaz de Processing.
 
-Basado en el TFG *Diseño y construcción de un aerogenerador de laboratorio y control mediante Arduino* (Universidad de Jaén, 2023), al que se le agregó el sensado de tensión, corriente, temperatura y humedad.
+---
+
+## 9. Limitaciones y mejoras futuras
+
+- La corriente se calcula (I = V/R); con un sensor de corriente (por ejemplo ACS712) se mediría de verdad.
+- El viento es un potenciómetro; con un anemómetro real se mediría el viento verdadero.
+- No se calcula la energía acumulada (Wh) ni se miden las RPM del rotor.
+- Los umbrales deben calibrarse con el motor real.
+- La planta completa alimentaría una batería con un sistema de carga controlado.
+- Se planea el armado de una maqueta para un prototipo mas completo.
+
+---
+
+## Referencias
+
+Basado en el TFG *Diseño y construcción de un aerogenerador de laboratorio y control mediante Arduino* (Universidad de Jaén, 2023).
