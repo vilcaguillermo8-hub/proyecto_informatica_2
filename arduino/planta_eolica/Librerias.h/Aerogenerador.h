@@ -45,12 +45,26 @@ class Aerogenerador {
      */
     float potenciaTeoricaMw(float densidadAireKgm3);
 
+    /*
+     Suma a la energia acumulada lo entregado en el ultimo intervalo, usando
+     la potencia calculada en la ultima llamada a actualizar().
+     Hay que llamarla a intervalos regulares (ver PERIODO_ENERGIA_MS).
+     param intervaloMs  milisegundos transcurridos desde la llamada anterior.
+    */
+    void acumularEnergia(unsigned long intervaloMs);
+
+    /* return energia total entregada a la carga desde el inicio (o el ultimo reset), en mWh. */
+    float obtenerEnergia();
+
+    /* Pone la energia acumulada en cero (la usa CMD:RESET). */
+    void reiniciarEnergia();
   private:
     float _resistenciaCargaOhm;
     float _tensionV;
     float _vientoMs;
     float _corrienteMa;
     float _potenciaMw;
+    float _energiaMwh; //Es la acumulada, la que crece con el tiempo
 };
 
 #endif
