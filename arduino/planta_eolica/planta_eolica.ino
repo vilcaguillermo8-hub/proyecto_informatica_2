@@ -34,9 +34,11 @@ MaquinaEstados    maquina(PIN_LED_VERDE, PIN_LED_AMARILLO, PIN_LED_ROJO);
 ComunicacionSerie comunicacion(BAUDIOS_SERIE);
 
 unsigned long ultimoEnvioMs = 0UL;   // instante de la ultima trama enviada
+unsigned long ultimaEnergiaMs = 0UL;   // instante de la ultima suma de energia
 
 // Prototipos de las funciones de este archivo 
 void actualizarPlanta();
+void acumularEnergia(unsigned long ahora);
 void atenderOrdenes();
 Medicion armarMedicion();
 
@@ -59,6 +61,7 @@ void loop() {
   sensorAmbiente.actualizar();        // lee el DHT22 solo si ya pasaron 2 s
   atenderOrdenes();                   // revisa si Processing mando algo
   actualizarPlanta();                 // mide, calcula y decide
+  acumularEnergia(ahora);             // suma la energia cada PERIODO_ENERGIA_MS
 
   // Cada PERIODO_ENVIO_MS se manda una trama. Se compara contra la diferencia
   // (ahora - ultimo) y no contra un instante fijo: asi funciona aunque millis()
@@ -83,8 +86,23 @@ void actualizarPlanta() {
 }
 
 /*
+    Suma la energia entregada a la carga. Se hace una vez cada PERIODO_ENERGIA_MS
+    (y no en cada vuelta de loop) para que cada suma sea de un valor razonable:
+    sumar miles de cantidades minusculas por segundo pierde precision en un float.
+    param ahora  milisegundos actuales (millis()).
+ */
+void acumularEnergia(unsigned long ahora) {
+  unsigned long transcurrido = ahora - ultimaEnergiaMs;
+
+  if (transcurrido >= PERIODO_ENERGIA_MS) {
+    aerogenerador.acumularEnergia(transcurrido);   // se pasa el tiempo REAL transcurrido
+    ultimaEnergiaMs = ahora;
+  }
+}
+/*
   Atiende las ordenes que llegaron desde Processing.
   CMD:UMBRAL=<V> cambia el umbral de derivacion; CMD:RESET devuelve la planta a ESPERA.
+  ESPERA, restaura el umbral y pone la energia acumulada en cero.
  */
 void atenderOrdenes() {
   Orden orden;   // se completa dentro de leerOrden (paso por referencia)
@@ -94,6 +112,7 @@ void atenderOrdenes() {
       maquina.establecerUmbralDerivacion(orden.valor);
     } else if (orden.tipo == ORDEN_RESET) {
       maquina.reiniciar();
+      aerogenerador.reiniciarEnergia();
     }
   }
 }
@@ -111,6 +130,7 @@ Medicion armarMedicion() {
   medicion.temperatura = sensorAmbiente.obtenerTemperatura();
   medicion.tensionV    = aerogenerador.obtenerTension();
   medicion.corrienteMa = aerogenerador.obtenerCorriente();
+  medicion.energiaMwh  = aerogenerador.obtenerEnergia();
   medicion.estado      = (int) maquina.obtenerEstado();
 
   return medicion;
