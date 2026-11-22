@@ -50,5 +50,6 @@ const float TENSION_DERIVACION_V  = 4.0;    // desde aca: DERIVACION (sobra ener
 const float TENSION_MAXIMA_V      = 8.0;    // desde aca: PROTECCION (A0 llega hasta 10 V)
 const float TEMPERATURA_CRITICA_C = 50.0;   // desde aca: PROTECCION
 const float HISTERESIS_V          = 0.2;    // margen para que el estado no parpadee
+const float HISTERESIS_TEMP_C = 2.0;   // margen en grados para salir de PROTECCION por temperatura
 
 #endif
