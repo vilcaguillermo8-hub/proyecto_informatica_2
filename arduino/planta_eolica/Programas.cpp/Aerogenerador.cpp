@@ -1,75 +1,70 @@
+/*
+Implementacion de la clase Aerogenerador (declarada en Aerogenerador.h).
+
+ No lee pines ni usa millis(): recibe tensiones y tiempos ya medidos y hace
+ cuentas. Por eso se puede probar en cualquier computadora sin el Arduino.
+*/
+#include <Arduino.h>      // para la constante PI
 #include "Aerogenerador.h"
+#include "Config.h"       // RADIO_ROTOR_M y COEFICIENTE_BETZ
 
-Aerogenerador::Aerogenerador() {
-    velocidadViento = 0;
-    direccionViento = 0;
-    direccionTurbina = 0;
-    potenciaGenerada = 0;
-    tensionSalida = 12;   // valor nominal por defecto
-    corrienteSalida = 0;
-    radioRotor = 0.25;    // Radio por defecto ajustado a 0.25m[cite: 7]
-    estado = 0;
+// Milisegundos que tiene una hora: sirve para pasar (mW x ms) a mWh.
+static const float MS_POR_HORA = 3600000.0;
+
+// Constructor: guarda la carga y deja todas las magnitudes en cero.
+Aerogenerador::Aerogenerador(float resistenciaCargaOhm) {
+  // Una resistencia de 0 o negativa no tiene sentido fisico y dividiria por cero.
+  // Se usa 1 ohm para que el programa no falle; el valor correcto va en Config.h.
+ if (resistenciaCargaOhm > 0.0) {
+    _resistenciaCargaOhm = resistenciaCargaOhm;
+ } else {
+    _resistenciaCargaOhm = 1.0;
+ }
+
+  _tensionV = 0.0;
+  _vientoMs = 0.0;
+  _corrienteMa = 0.0;
+  _potenciaMw = 0.0;
+  _energiaMwh = 0.0;
 }
 
-Aerogenerador::Aerogenerador(float radio, float tension) {
-    velocidadViento = 0;
-    direccionViento = 0;
-    direccionTurbina = 0;
-    potenciaGenerada = 0;
-    tensionSalida = tension;
-    corrienteSalida = 0;
-    radioRotor = radio;
-    estado = 0;
+// actualizar(): guarda lo medido y recalcula corriente y potencia.
+void Aerogenerador::actualizar(float tensionV, float vientoMs) {
+  _tensionV = tensionV;
+  _vientoMs = vientoMs;
+
+  // Ley de Ohm sobre la carga conocida: I = V / R  (se multiplica por 1000: A -> mA)
+  _corrienteMa = tensionV / _resistenciaCargaOhm * 1000.0;
+
+  // P = V^2 / R  (se multiplica por 1000: W -> mW)
+  _potenciaMw = tensionV * tensionV / _resistenciaCargaOhm * 1000.0;
 }
 
-void Aerogenerador::medirViento(float vel, float dir) {
-    velocidadViento = vel;
-    direccionViento = dir;
+// Getters: solo devuelven lo guardado.
+float Aerogenerador::obtenerTension()   { return _tensionV; }
+float Aerogenerador::obtenerCorriente() { return _corrienteMa; }
+float Aerogenerador::obtenerPotencia()  { return _potenciaMw; }
+float Aerogenerador::obtenerViento()    { return _vientoMs; }
+
+// potenciaTeoricaMw(): lo maximo que el viento podria dar (limite de Betz).
+//     P = 0.5 * Cp * densidad * area * viento^3
+  float area = PI * RADIO_ROTOR_M * RADIO_ROTOR_M;                 // area barrida por las palas (m2)
+  float viento3 = _vientoMs * _vientoMs * _vientoMs;               // viento^3
+  float potenciaW = 0.5 * COEFICIENTE_BETZ * densidadAireKgm3 * area * viento3;
+
+  return potenciaW * 1000.0;                                       // W -> mW
 }
 
-void Aerogenerador::orientarTurbina() {
-    direccionTurbina = direccionViento;
+// acumularEnergia(): energia = potencia x tiempo, sumada en cada intervalo.
+void Aerogenerador::acumularEnergia(unsigned long intervaloMs) {
+  // mW x ms / (ms en una hora) = mWh
+  _energiaMwh += _potenciaMw * (float) intervaloMs / MS_POR_HORA;
 }
 
-float Aerogenerador::calcularPotencia() {
-    if (estado == 0) {
-        potenciaGenerada = 0;
-        corrienteSalida = 0;
-        return 0;
-    }
-    
-    const float DENSIDAD_AIRE = 1.225; // Densidad del aire en kg/m3[cite: 7]
-    const float LIMITE_BETZ = 0.59;    // Límite de máxima eficiencia teórica[cite: 7]
-    const float PI_ = 3.14159;
-    
-    // Área barrida por las palas[cite: 7]
-    float area = PI_ * radioRotor * radioRotor; 
-    
-    // Potencia máxima extraída (en Watts)[cite: 7]
-    potenciaGenerada = 0.5 * LIMITE_BETZ * DENSIDAD_AIRE * area * (velocidadViento * velocidadViento * velocidadViento);
-    
-    corrienteSalida = potenciaGenerada / tensionSalida;
-    return potenciaGenerada;
+float Aerogenerador::obtenerEnergia() {
+  return _energiaMwh;
 }
 
-void Aerogenerador::encendido() { 
-    estado = 1; 
-}
-
-void Aerogenerador::apagado() { 
-    estado = 0; 
-}
-
-void Aerogenerador::mostrar() {
-    if (estado == 1) {
-        Serial.println("Estado: ON");
-    } else {
-        Serial.println("Estado: OFF");
-    }
-    
-    Serial.print("Viento: "); Serial.print(velocidadViento); Serial.print(" m/s a "); Serial.print(direccionViento); Serial.println(" grados");
-    Serial.print("Turbina orientada a: "); Serial.print(direccionTurbina); Serial.println(" grados");
-    Serial.print("Potencia: "); Serial.print(potenciaGenerada); Serial.println(" W");
-    Serial.print("Tension: "); Serial.print(tensionSalida); Serial.print(" V, Corriente: "); Serial.print(corrienteSalida); Serial.println(" A");
-    Serial.println("-----------------------");
+void Aerogenerador::reiniciarEnergia() {
+  _energiaMwh = 0.0;
 }
