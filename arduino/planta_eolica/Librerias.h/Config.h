@@ -18,3 +18,13 @@ const int PIN_LED_ROJO      = 10;   // estado PROTECCION
 // ------ Sensor de Ambiente ------ 
 const int TIPO_DHT = 22;                          // 22 = DHT22 
 const unsigned long PERIODO_LECTURA_DHT_MS = 2000UL;  
+
+// ------ Comunicacion serie ------ 
+const long BAUDIOS_SERIE = 9600L; //Como en processing
+const unsigned long PERIODO_ENVIO_MS = 1000UL; //Una trama por segundo
+
+// ------ Distribucion Electrica ------ 
+const float REFERENCIA_ADC_V     = 5.0;           // tension de referencia del conversor
+const float RESISTENCIA_ALTA_OHM = 10000.0;       // R1 del divisor (hacia el positivo)
+const float RESISTENCIA_BAJA_OHM = 10000.0;       // R2 del divisor (hacia GND)
+// Factor para volver de la tension del pin a la tension real: (R1 + R2) / R2 = 2.
