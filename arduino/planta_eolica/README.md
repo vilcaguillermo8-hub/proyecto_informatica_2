@@ -1,6 +1,6 @@
 # Planta Generadora Eólica Inteligente — Parte Arduino
 
-Prototipo de micro planta eólica: un motor paso a paso usado como generador alimenta una carga resistiva. Un Arduino UNO mide la tensión generada, el viento, la temperatura y la humedad, calcula corriente y potencia, decide el estado de la planta (con una máquina de estados) y envía los datos por USB a la interfaz de Processing.
+Prototipo de micro planta eólica: un motor paso a paso usado como generador alimenta una carga resistiva. Un Arduino UNO mide la tensión generada, el viento, la temperatura y la humedad, calcula corriente, potencia y energia, decide el estado de la planta (con una máquina de estados) y envía los datos por USB a la interfaz de Processing.
 
 > **Alcance del prototipo:** se muestra el comportamiento de la planta hacia una carga (no la planta completa). El viento se simula con un potenciómetro; la corriente se calcula, no se mide.
 
@@ -14,7 +14,7 @@ Una vez por segundo el Arduino:
 
 1. Lee la tensión del generador (A0) y el viento simulado (A1).
 2. Lee temperatura y humedad del DHT22 (cada 2 s como mínimo; entre lecturas conserva el último valor válido).
-3. Calcula corriente y potencia sobre la carga.
+3. Calcula corriente y potencia sobre la carga, y va sumando la energía entregada.
 4. Actualiza la máquina de estados y los LEDs.
 5. Envía una trama de texto por serie a la PC.
 
@@ -34,6 +34,7 @@ Además atiende órdenes que llegan desde Processing (cambiar umbral, reiniciar)
 | 2 resistencias 10 kΩ | Divisor de tensión (÷2) | A0 |
 | Potenciómetro | Simula el viento (0–28 m/s) | A1 |
 | DHT22 | Temperatura y humedad | D2 |
+| BMP180 (opcional) | Presión (I2C, 5 V) | A4 / A5 |
 | 3 LEDs + 3 × 220 Ω | Verde, amarillo, rojo | D8 / D9 / D10 |
 
 ## 3. Armado del circuito (resumen)
@@ -69,7 +70,7 @@ Los umbrales están en `Config.h` y son **provisorios** (se ajustan en las prueb
 ### Arduino → PC (una línea por segundo)
 
 ```
-HUM:48;VTO:8.5;POT:250;TMP:24;V:5.0;I:50;EST:1
+HUM:48;VTO:8.5;POT:250;TMP:24;V:5.0;I:50;EST:1;ENE:4.17
 ```
 
 | Clave | Variable | Unidad |
@@ -81,13 +82,14 @@ HUM:48;VTO:8.5;POT:250;TMP:24;V:5.0;I:50;EST:1
 | V | Tensión en la carga | V |
 | I | Corriente en la carga | mA |
 | EST | Estado de la planta | 0 a 3 |
+| ENE | Energía acumulada entregada a la carga | mWh |
 
 ### PC → Arduino (órdenes)
 
 | Orden | Efecto |
 |---|---|
 | `CMD:UMBRAL=<V>` | Cambia el umbral de derivación (en voltios) |
-| `CMD:RESET` | Devuelve la planta a ESPERA y restaura el umbral de derivación |
+| `CMD:RESET` | Devuelve la planta a ESPERA y restaura el umbral de derivación y pone la energía en cero |
 
 > Solo puede haber un programa usando el puerto COM a la vez: cerrar el Monitor Serie del IDE antes de abrir Processing.
 
@@ -111,8 +113,9 @@ HUM:48;VTO:8.5;POT:250;TMP:24;V:5.0;I:50;EST:1
 arduino/planta_eolica/
 ├── planta_eolica.ino      Programa principal: solo setup() y loop()
 ├── Config.h               Pines, constantes y umbrales
-├── Sensores.h / .cpp      SensorTension, SensorViento, SensorAmbiente (DHT22)
-├── Aerogenerador.h / .cpp Cálculo de corriente, potencia y potencia teórica
+├── Sensores.h / .cpp      SensorTension, SensorViento 
+├── SensorAmbiente.cpp     SensorAmbiente: temperatura y humedad (DHT22 o DHT11)
+├── Aerogenerador.h / .cpp Cálculo de corriente, potencia, energia y potencia teórica
 ├── MaquinaEstados.h / .cpp Estados, umbrales con histéresis y LEDs
 └── ComunicacionSerie.h / .cpp Envío de la trama y lectura de órdenes
 ```
@@ -124,10 +127,11 @@ Cada módulo es una clase con su declaración en el `.h` (el "contrato") y su l�
 ## 8. Cómo compilar y cargar
 
 1. Abrir `planta_eolica.ino` con el IDE de Arduino (los demás archivos se cargan solos si están en la misma carpeta).
-2. Instalar desde el Gestor de Bibliotecas: **DHT sensor library** y **Adafruit Unified Sensor**.
-3. Seleccionar placa **Arduino Uno** y el puerto correcto.
-4. Cargar el sketch.
-5. Cerrar el Monitor Serie y abrir la interfaz de Processing.
+2. Si se usa el DHT11 en lugar del DHT22, cambiar `TIPO_DHT` a 11 en `Config.h`.
+3. Instalar desde el Gestor de Bibliotecas: **DHT sensor library** y **Adafruit Unified Sensor**.
+4. Seleccionar placa **Arduino Uno** y el puerto correcto.
+5. Cargar el sketch.
+6. Cerrar el Monitor Serie y abrir la interfaz de Processing.
 
 ---
 
@@ -135,6 +139,7 @@ Cada módulo es una clase con su declaración en el `.h` (el "contrato") y su l�
 
 - La corriente se calcula (I = V/R); con un sensor de corriente (por ejemplo ACS712) se mediría de verdad.
 - El viento es un potenciómetro; con un anemómetro real se mediría el viento verdadero.
+- No se miden las RPM del rotor (haría falta un sensor en el eje, por ejemplo Hall o fotointerruptor).
 - No se calcula la energía acumulada (Wh) ni se miden las RPM del rotor.
 - Los umbrales deben calibrarse con el motor real.
 - La planta completa alimentaría una batería con un sistema de carga controlado.
