@@ -16,8 +16,8 @@ const int PIN_LED_AMARILLO  = 9;    // estado DERIVACION
 const int PIN_LED_ROJO      = 10;   // estado PROTECCION
 
 // ------ Sensor de Ambiente ------ 
-const int TIPO_DHT = 22;                          // 22 = DHT22 o 11 si = DHT11
-const unsigned long PERIODO_LECTURA_DHT_MS = 2000UL;  //El DHT11 admite 1s
+const int TIPO_DHT = 11;                          // 22 = DHT22 o 11 si = DHT11
+const unsigned long PERIODO_LECTURA_DHT_MS = 1000UL;  //El DHT11 admite 1s
 const unsigned long PERIODO_ENERGIA_MS = 1000UL;  //Periodo de 1s entre cada medicion de energia
 
 // ------ Comunicacion serie ------ 
