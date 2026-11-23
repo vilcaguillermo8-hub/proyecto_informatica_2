@@ -35,6 +35,7 @@ ComunicacionSerie comunicacion(BAUDIOS_SERIE);
 
 unsigned long ultimoEnvioMs = 0UL;   // instante de la ultima trama enviada
 unsigned long ultimaEnergiaMs = 0UL;   // instante de la ultima suma de energia
+float tensionFiltradaV = 0.0;   // tension suavizada para decidir el estado
 
 // Prototipos de las funciones de este archivo 
 void actualizarPlanta();
@@ -77,12 +78,12 @@ void loop() {
   estados decida. Entrada: ninguna. Salida: ninguna (actualiza los objetos globales).
  */
 void actualizarPlanta() {
-  float tensionV = sensorTension.leerVoltios();
-  float vientoMs = sensorViento.leerMetrosPorSegundo();
+float tensionMedidaV = sensorTension.leerVoltios();
+// Filtro exponencial: cada vuelta toma 5 % de la lectura nueva y 95 % de lo anterior.
+tensionFiltradaV += 0.05 * (tensionMedidaV - tensionFiltradaV);
+float vientoMs = sensorViento.leerMetrosPorSegundo();
 
-  aerogenerador.actualizar(tensionV, vientoMs);
-  maquina.actualizar(aerogenerador.obtenerTension(),
-                     sensorAmbiente.obtenerTemperatura());
+aerogenerador.actualizar(tensionFiltradaV, vientoMs);
 }
 
 /*

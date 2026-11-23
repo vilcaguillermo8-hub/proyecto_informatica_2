@@ -31,7 +31,7 @@ const float RESISTENCIA_BAJA_OHM = 10000.0;       // R2 del divisor (hacia GND)
 // Factor para volver de la tension del pin a la tension real: (R1 + R2) / R2 = 2.
 const float FACTOR_DIVISOR =
     (RESISTENCIA_ALTA_OHM + RESISTENCIA_BAJA_OHM) / RESISTENCIA_BAJA_OHM;
-const float RESISTENCIA_CARGA_OHM = 100.0;        // carga conocida: la corriente se CALCULA
+const float RESISTENCIA_CARGA_OHM = 330.0;        // carga conocida: la corriente se CALCULA
 
 // ------ Viento simulado ------
 const float VIENTO_MAX_MS = 28.0;                 // el potenciometro va de 0 a este valor

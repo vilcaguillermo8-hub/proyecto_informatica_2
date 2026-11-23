@@ -58,7 +58,7 @@ class SensorViento {
 // Esta clase la escribe el companero encargado del DHT22.
 // Reglas: NO usar delay(); el sensor se lee cada PERIODO_LECTURA_DHT_MS como
 // minimo; si una lectura falla (NaN) se conserva el ultimo valor valido.
-
+class SensorAmbiente {
   public:
     /*
      param pin   pin digital del DATA del DHT22.
