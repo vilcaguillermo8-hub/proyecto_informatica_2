@@ -1,6 +1,5 @@
 /**
  * SensorAmbiente.cpp
- * ------------------------------------------------------------------------------
  * Implementacion de SensorAmbiente (declarada en Sensores.h): temperatura y
  * humedad con un sensor DHT22 o DHT11 (el tipo se elige en Config.h).
  *
@@ -23,9 +22,7 @@ static const float TEMP_MAX_VALIDA_C = 80.0;
 static const float HUM_MIN_VALIDA_PCT = 0.0;
 static const float HUM_MAX_VALIDA_PCT = 100.0;
 
-// ------------------------------------------------------------------------------
 // Constructor: SOLO guarda datos. No toca el hardware (ver iniciar()).
-// ------------------------------------------------------------------------------
 SensorAmbiente::SensorAmbiente(int pin, int tipo) {
   _pin = pin;
   _tipo = tipo;
@@ -37,9 +34,7 @@ SensorAmbiente::SensorAmbiente(int pin, int tipo) {
   _dht = NULL;               // el objeto de la libreria se crea en iniciar()
 }
 
-// ------------------------------------------------------------------------------
 // iniciar(): se llama UNA vez desde setup().
-// ------------------------------------------------------------------------------
 void SensorAmbiente::iniciar() {
   if (_dht == NULL) {                              // evita crearlo dos veces
     _dht = new DHT((uint8_t)_pin, (uint8_t)_tipo);
@@ -51,9 +46,7 @@ void SensorAmbiente::iniciar() {
   _ultimaLecturaMs = millis();
 }
 
-// ------------------------------------------------------------------------------
 // actualizar(): se llama en CADA vuelta de loop(). No bloquea.
-// ------------------------------------------------------------------------------
 void SensorAmbiente::actualizar() {
   if (_dht == NULL) return;                        // por si se olvidaron de iniciar()
 
@@ -80,9 +73,7 @@ void SensorAmbiente::actualizar() {
   }
 }
 
-// ------------------------------------------------------------------------------
 // Getters: solo devuelven lo guardado, no leen el sensor.
-// ------------------------------------------------------------------------------
 float SensorAmbiente::obtenerHumedad()     { return _humedad; }
 float SensorAmbiente::obtenerTemperatura() { return _temperatura; }
 float SensorAmbiente::obtenerPresion()     { return _presion; }
