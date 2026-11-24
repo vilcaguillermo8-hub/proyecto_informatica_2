@@ -89,11 +89,12 @@ int interfazObtenerBotonEn(float px, float py) {
  * Dibujo de la pantalla completa
  */
 void interfazDibujarPantalla(EstadoSistema estado,
-                             ListaEnlazadaEventos bitacora) {
+                             ListaEnlazadaEventos bitacora,
+                             GraficoEstadoEuler grafico) {
   dibujarFondo();
   dibujarCabecera(estado);
   dibujarAreaVariables(estado);
-  dibujarPanelLateral(estado, bitacora);
+  dibujarPanelLateral(bitacora, grafico);
   dibujarPie();
 }
 
@@ -279,8 +280,8 @@ void dibujarMedidor(float cx, float cy, float diametro,
 void dibujarBarraRango(float x, float y, float ancho,
                        VariableMonitorizada variable, color tono) {
   float minimo = variable.minimoSimulado;
-  // El minimo es chiquito porque potencia se mide en kW
-  float rango = max(0.000001, variable.maximoSimulado - minimo);
+  // El minimo es cero porque potencia se mide en mW
+  float rango = max(1.0, variable.maximoSimulado - minimo);
   float inicioNormal = constrain((variable.limiteBajo - minimo) / rango, 0.0, 1.0);
   float finNormal = constrain((variable.limiteNormalAlto - minimo) / rango, 0.0, 1.0);
   float critIzq = constrain((variable.limiteCriticoBajo - minimo) / rango, 0.0, 1.0);
@@ -305,9 +306,11 @@ void dibujarBarraRango(float x, float y, float ancho,
 }
 
 /**
- * Dejo el panel de estado arriba y la bitacora se lleva todo lo que sobra
+ * Reparto la columna derecha solo entre bitacora y grafico de Euler
+ * La bitacora es mas corta que en el otro proyecto para dejar lugar al grafico
  */
-void dibujarPanelLateral(EstadoSistema estado, ListaEnlazadaEventos bitacora) {
+void dibujarPanelLateral(ListaEnlazadaEventos bitacora,
+                         GraficoEstadoEuler grafico) {
   float margen = 28.0;
   float anchoIzquierdo = width * 0.62;
   float x = margen + anchoIzquierdo + 16.0;
@@ -315,40 +318,12 @@ void dibujarPanelLateral(EstadoSistema estado, ListaEnlazadaEventos bitacora) {
   float y = 104.0;
   float separacion = 16.0;
 
-  float altoEstado = 96.0;
-  dibujarPanelEstado(x, y, ancho, altoEstado, estado);
+  float altoBitacora = 220.0;
+  dibujarPanelBitacora(x, y, ancho, altoBitacora, bitacora);
 
-  float yBitacora = y + altoEstado + separacion;
-  float altoBitacora = height - yBitacora - 86.0;
-  dibujarPanelBitacora(x, yBitacora, ancho, altoBitacora, bitacora);
-}
-
-/**
- * Resumo el estado general con su etiqueta y su color
- */
-void dibujarPanelEstado(float x, float y, float ancho, float alto,
-                        EstadoSistema estado) {
-  pushStyle();
-  fill(COLOR_PANEL);
-  stroke(red(COLOR_BORDE), green(COLOR_BORDE), blue(COLOR_BORDE), 120);
-  strokeWeight(1);
-  rect(x, y, ancho, alto, 16);
-
-  noStroke();
-  aplicarFuente(fuenteCuerpo);
-  textSize(12);
-  fill(COLOR_TEXTO_SUAVE);
-  textAlign(LEFT, TOP);
-  text("ESTADO GENERAL", x + 18, y + 16);
-
-  dibujarInsigniaNivel(estado.nivelGeneral, x + 18, y + 42);
-
-  aplicarFuente(fuenteDatos);
-  textSize(22);
-  fill(colorNivel(estado.nivelGeneral));
-  textAlign(RIGHT, TOP);
-  text(textoNivel(estado.nivelGeneral), x + ancho - 18, y + 42);
-  popStyle();
+  float yGrafico = y + altoBitacora + separacion;
+  float altoGrafico = height - yGrafico - 86.0;
+  dibujarPanelEstadoEuler(x, yGrafico, ancho, altoGrafico, grafico);
 }
 
 /**

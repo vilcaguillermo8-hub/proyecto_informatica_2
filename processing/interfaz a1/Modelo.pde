@@ -250,13 +250,13 @@ class EstadoSistema {
     viento.configurarSimulacion(0.0, 28.0, 0.9, 8.0);
     viento.configurarUmbrales(4.0, 15.0, 1.0, 25.0);
 
-    potencia = new VariableMonitorizada("POT", "Potencia generada", "kW",
+    potencia = new VariableMonitorizada("POT", "Potencia generada", "mW",
                                         "Salida del generador");
-    // Arduino manda mW y aca guardo kW, por eso los numeros son tan chicos
-    // La maqueta da como maximo unos 640 mW, que son 0.00064 kW
-    potencia.establecerDecimales(6);
-    potencia.configurarSimulacion(0.0, 0.0008, 0.000022, 0.00042);
-    potencia.configurarUmbrales(0.00015, 0.00060, 0.00005, 0.00075);
+    // Arduino manda mW y aca muestro mW directo, sin conversion rara
+    // La maqueta da como maximo unos 640 mW, asi que el rango llega a 800
+    potencia.establecerDecimales(0);
+    potencia.configurarSimulacion(0.0, 800.0, 22.0, 420.0);
+    potencia.configurarUmbrales(150.0, 600.0, 50.0, 750.0);
 
     temperatura = new VariableMonitorizada("TMP", "Temperatura", "°C",
                                            "Temperatura del gabinete electronico");

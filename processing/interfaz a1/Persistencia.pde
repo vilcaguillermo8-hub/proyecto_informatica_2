@@ -93,6 +93,7 @@ void persistenciaCrearConfiguracionPorDefecto(EstadoSistema estado) {
     "# Generador eolico - umbrales de alerta",
     "# Formato: prefijo.umbral=valor",
     "# prefijos: HUM, VTO, POT, TMP",
+    "# POT llega de Arduino en mW y se muestra en mW",
     "# umbrales: bajo, normalAlto, criticoBajo, criticoAlto",
     "HUM.bajo=" + str(estado.humedad.limiteBajo),
     "HUM.normalAlto=" + str(estado.humedad.limiteNormalAlto),

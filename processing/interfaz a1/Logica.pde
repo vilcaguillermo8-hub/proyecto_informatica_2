@@ -8,11 +8,13 @@
  * Actualiza todas las variables en un paso de tiempo
  * Lo llamo desde draw(), pero solo hace algo cada CUADROS_POR_LECTURA cuadros
  * Si hay datos serie recientes los uso, si no genero lecturas simuladas
+ * Al final le paso el estado general al grafico de Euler
  */
 void logicaActualizarSimulacion(EstadoSistema estado,
-                                ListaEnlazadaEventos bitacora) {
+                                ListaEnlazadaEventos bitacora,
+                                GraficoEstadoEuler grafico) {
   // Si me pasan datos nulos, salgo para no cortar el dibujo a mitad
-  if (estado == null || bitacora == null) {
+  if (estado == null || bitacora == null || grafico == null) {
     println("ERROR: estado o bitacora nulos");
     return;
   }
@@ -46,6 +48,9 @@ void logicaActualizarSimulacion(EstadoSistema estado,
   }
 
   estado.nivelGeneral = logicaCalcularNivelGeneral(estado);
+
+  // Con el nivel general ya listo doy un paso de Euler y guardo la muestra
+  grafico.actualizar(estado.nivelGeneral);
 }
 
 /**

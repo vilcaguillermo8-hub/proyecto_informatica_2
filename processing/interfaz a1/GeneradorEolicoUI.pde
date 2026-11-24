@@ -1,9 +1,10 @@
 import processing.serial.*;
 
 /**
- * GeneradorEolicoUI.pde
+ * GeneradorEolicoMetodosNumericos.pde
  * Archivo principal del sketch
  * Aca estan las variables globales y las funciones que Processing llama solo
+ * Este proyecto es igual a GeneradorEolicoUI pero suma un grafico con Euler
  */
 
 // Guardo el estado de los cuatro sensores en una sola variable
@@ -12,6 +13,9 @@ EstadoSistema estadoSistema = null;
 
 // Historial de eventos, guardado como lista enlazada
 ListaEnlazadaEventos bitacoraEventos = null;
+
+// Historial del estado general calculado con Euler
+GraficoEstadoEuler graficoEstado = null;
 
 // Areas de los dos botones del pie
 // se crean vacias y les doy su posicion real cuando dibujo el pie
@@ -33,6 +37,9 @@ void setup() {
   estadoSistema = new EstadoSistema(IDENTIFICADOR_SISTEMA);
   bitacoraEventos = new ListaEnlazadaEventos(CAPACIDAD_MAXIMA_BITACORA);
 
+  // Creo el grafico vacio, se va llenando con cada lectura nueva
+  graficoEstado = new GraficoEstadoEuler();
+
   // Abro el puerto serie si hay una placa conectada
   // Si no hay, la simulacion sigue funcionando igual que antes
   inicializarSerie();
@@ -45,8 +52,8 @@ void setup() {
 
 // En cada cuadro se actualizan los datos y despues dibuja
 void draw() {
-  logicaActualizarSimulacion(estadoSistema, bitacoraEventos);
-  interfazDibujarPantalla(estadoSistema, bitacoraEventos);
+  logicaActualizarSimulacion(estadoSistema, bitacoraEventos, graficoEstado);
+  interfazDibujarPantalla(estadoSistema, bitacoraEventos, graficoEstado);
 }
 
 // El teclado sirve para las mismas acciones que los botones
