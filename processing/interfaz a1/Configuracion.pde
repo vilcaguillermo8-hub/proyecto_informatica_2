@@ -24,7 +24,11 @@ final int BAUDIOS_SERIE = 9600;
 
 // Dejalo vacio para probar los puertos en orden
 // Si quieres elegir uno a mano, escribe su nombre, por ejemplo COM3
+<<<<<<< HEAD
 final String PUERTO_SERIE_FORZADO = "COM3";
+=======
+final String PUERTO_SERIE_FORZADO = "COM2";
+>>>>>>> 797fb3cf09e745d5bc3b4bdce4571b21e1e2d953
 
 // Arduino envia una trama por segundo
 // Si pasan tres segundos sin datos, vuelvo a la simulacion
@@ -38,8 +42,13 @@ final String RUTA_BITACORA = "bitacora.txt";
 // Cuando se llena, la lista descarta el evento mas viejo
 final int CAPACIDAD_MAXIMA_BITACORA = 60;
 
-// Cuantas lineas del log se ven ahora en la bitacora ampliada
-final int MAX_EVENTOS_VISIBLES = 14;
+// Cuantas lineas del log se ven en la bitacora reducida
+// Este proyecto deja espacio abajo para el grafico del estado general
+final int MAX_EVENTOS_VISIBLES = 6;
+
+// Cuantas muestras del estado general guarda el grafico de Euler
+// Con 0.4 s por lectura se ven unos 19 segundos de historia
+final int CANTIDAD_MUESTRAS_ESTADO = 48;
 
 // Los tres estados que puede tener una variable
 final int NIVEL_BAJO = 0;
