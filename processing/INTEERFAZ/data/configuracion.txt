@@ -1,0 +1,25 @@
+# Generador eolico - umbrales de alerta
+# Formato: prefijo.umbral=valor
+# prefijos: HUM, VTO, POT, TMP
+# umbrales: bajo, normalAlto, criticoBajo, criticoAlto
+# Restriccion: criticoBajo <= bajo < normalAlto <= criticoAlto
+# CRITICO: valor <= criticoBajo o valor >= criticoAlto
+# NORMAL: bajo <= valor <= normalAlto
+# BAJO: esta fuera del rango normal pero no llega a critico
+# POT llega de Arduino en mW y se muestra en mW
+HUM.bajo=35
+HUM.normalAlto=65
+HUM.criticoBajo=20
+HUM.criticoAlto=80
+VTO.bajo=4
+VTO.normalAlto=15
+VTO.criticoBajo=1
+VTO.criticoAlto=25
+POT.bajo=150
+POT.normalAlto=600
+POT.criticoBajo=50
+POT.criticoAlto=750
+TMP.bajo=10
+TMP.normalAlto=35
+TMP.criticoBajo=-5
+TMP.criticoAlto=50
