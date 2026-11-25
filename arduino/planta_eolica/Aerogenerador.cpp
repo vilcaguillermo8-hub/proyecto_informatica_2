@@ -77,4 +77,3 @@ float Aerogenerador::obtenerEnergia() {
 
 void Aerogenerador::reiniciarEnergia() {
   _energiaMwh = 0.0;
-}

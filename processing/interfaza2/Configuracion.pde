@@ -24,7 +24,7 @@ final int BAUDIOS_SERIE = 9600;
 
 // Dejalo vacio para probar los puertos en orden
 // Si quieres elegir uno a mano, escribe su nombre, por ejemplo COM3
-final String PUERTO_SERIE_FORZADO = "COM2";
+final String PUERTO_SERIE_FORZADO = "";
 
 // Arduino envia una trama por segundo
 // Si pasan tres segundos sin datos, vuelvo a la simulacion
